@@ -66,7 +66,7 @@ class SnakePart:
 
     def __init__(self, x, y):
         self.position = pygame.Vector2(x, y)
-        self.direction = Direction.Nothing
+        self.direction = Direction.Right
         self.next_turn_pos = pygame.Vector2(0, 0)
         self.next_direction = Direction.Nothing
         self.next_turns = deque()
@@ -231,11 +231,15 @@ font = pygame.font.SysFont("Arial", 80)
 player = Snake((TILE_COUNT // 2) * TILE_SIZE, (TILE_COUNT // 2) * TILE_SIZE)
 apples = [Apple()]
 
+# Aby se nám nerozjel
+waiting_for_input = True
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
         if event.type == pygame.KEYDOWN:
+            waiting_for_input = False
             if event.key == pygame.K_UP and player.head().direction != Direction.Down:
                 player.next_direction = Direction.Up
             if event.key == pygame.K_DOWN and player.head().direction != Direction.Up:
@@ -251,7 +255,7 @@ while True:
             ):
                 player.next_direction = Direction.Right
 
-    if not player.is_game_over:
+    if not player.is_game_over and not waiting_for_input:
         player.update()
 
     win.fill((10, 10, 10))
