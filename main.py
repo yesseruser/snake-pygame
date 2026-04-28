@@ -157,6 +157,15 @@ class Snake:
             if self.head().rect().colliderect(self.body[i].rect()):
                 self.is_game_over = True
 
+        # kolize s okrajem obrazovky
+        if (
+            self.head().position.x < 0
+            or self.head().position.y < 0
+            or self.head().position.x + TILE_SIZE > TILE_SIZE * TILE_COUNT
+            or self.head().position.y + TILE_SIZE > TILE_SIZE * TILE_COUNT
+        ):
+            self.is_game_over = True
+
     def draw(self):
         for part in self.body:
             part.draw()
