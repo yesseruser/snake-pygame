@@ -37,7 +37,11 @@ class Player:
     next_direction: Direction
 
     def __init__(self, x, y):
-        self.body = [pygame.Vector2(x, y)]
+        self.body = [
+            pygame.Vector2(x, y),
+            pygame.Vector2(x - TILE_SIZE, y),
+            pygame.Vector2(x - (2 * TILE_SIZE), y),
+        ]
         self.current_direction = Direction.Nothing
         self.next_direction = Direction.Nothing
 
@@ -45,12 +49,14 @@ class Player:
         return self.body[0]
 
     def update(self):
-        previous_pos = self.head()
-        self.body[0] = self.current_direction.apply(self.head(), SPEED)
-        for i in range(1, len(self.body)):
-            new_previous_pos = self.body[i]
-            self.body[i] = previous_pos
-            previous_pos = new_previous_pos
+        if self.current_direction != Direction.Nothing:
+            previous_pos = self.head()
+            self.body[0] = self.current_direction.apply(self.head(), SPEED)
+            for i in range(1, len(self.body)):
+                # Needs rewrite - last pos is not the pos the next part is supposed to be at
+                new_previous_pos = self.body[i]
+                self.body[i] = previous_pos
+                previous_pos = new_previous_pos
 
         if (
             self.head().x % TILE_SIZE == 0
@@ -90,6 +96,21 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP and player.current_direction != Direction.Down:
+                player.next_direction = Direction.Up
+            if event.key == pygame.K_DOWN and player.current_direction != Direction.Up:
+                player.next_direction = Direction.Down
+            if (
+                event.key == pygame.K_LEFT
+                and player.current_direction != Direction.Right
+            ):
+                player.next_direction = Direction.Left
+            if (
+                event.key == pygame.K_RIGHT
+                and player.current_direction != Direction.Left
+            ):
+                player.next_direction = Direction.Right
 
     player.update()
 
