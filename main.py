@@ -5,7 +5,7 @@
 # 5. kolize
 # 6. game over
 
-from typing import Self
+from __future__ import annotations  # Aby fungovaly anotace ve vlastní classe
 from collections import deque
 import random
 from enum import Enum
@@ -36,7 +36,7 @@ class Direction(Enum):
             case _:
                 return pygame.Vector2(vector.x, vector.y)
 
-    def invert(self) -> Self:
+    def invert(self) -> Direction:
         match self:
             case Direction.Up:
                 return Direction.Down
