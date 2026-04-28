@@ -3,7 +3,9 @@
 # 3. jablka
 # 4. hráč (pohyb se zahnutím - normálně)
 # 5. kolize
+# 6. game over
 
+from typing import Self
 from collections import deque
 import random
 from enum import Enum
@@ -34,7 +36,7 @@ class Direction(Enum):
             case _:
                 return pygame.Vector2(vector.x, vector.y)
 
-    def invert(self) -> Direction:
+    def invert(self) -> Self:
         match self:
             case Direction.Up:
                 return Direction.Down
@@ -89,7 +91,7 @@ class SnakePart:
             elif self.direction == Direction.Nothing:
                 self.direction = Direction.Right
 
-    def eat_apple(self, apples: list[Apple]) -> bool:
+    def eat_apple(self) -> bool:
         """
         Sní jablko z listu apples, pokud s nějakým koliduje
         Vrátí True, pokud snědl, jinak False
@@ -141,7 +143,7 @@ class Snake:
             self.next_direction = Direction.Nothing
 
         # kolize s jablkem
-        if self.head().eat_apple(apples):
+        if self.head().eat_apple():
             pos = (
                 self.body[-1]
                 .direction.invert()
@@ -210,9 +212,21 @@ def draw_grid():
                     )
 
 
+def draw_text(text, color):
+    rendered = font.render(text, True, color)
+    win.blit(
+        rendered,
+        (
+            win.get_width() // 2 - rendered.get_width() // 2,
+            win.get_height() // 2 - rendered.get_height() // 2,
+        ),
+    )
+
+
 pygame.init()
 win = pygame.display.set_mode((TILE_COUNT * TILE_SIZE, TILE_COUNT * TILE_SIZE))
 clock = pygame.time.Clock()
+font = pygame.font.SysFont("Arial", 80)
 
 player = Snake((TILE_COUNT // 2) * TILE_SIZE, (TILE_COUNT // 2) * TILE_SIZE)
 apples = [Apple()]
@@ -247,8 +261,7 @@ while True:
         apple.draw()
 
     if player.is_game_over:
-        # game over
-        pass
+        draw_text("Game Over", (255, 0, 0))
 
     pygame.display.flip()
 
