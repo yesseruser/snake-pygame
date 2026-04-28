@@ -2,6 +2,7 @@
 # 2. hráč (pohyb bez zahnutí)
 # 3. jablka
 # 4. hráč (pohyb se zahnutím - normálně)
+# 5. kolize
 
 from collections import deque
 import random
@@ -89,6 +90,10 @@ class SnakePart:
                 self.direction = Direction.Right
 
     def eat_apple(self, apples: list[Apple]) -> bool:
+        """
+        Sní jablko z listu apples, pokud s nějakým koliduje
+        Vrátí True, pokud snědl, jinak False
+        """
         for i, apple in enumerate(apples):
             if self.rect().colliderect(apple.rect()):
                 apples[i] = Apple()
@@ -99,7 +104,7 @@ class SnakePart:
 class Snake:
     body: list[SnakePart]
     next_direction: Direction
-    turns = dict[pygame.Vector2, Direction]
+    is_game_over: bool
 
     def __init__(self, x, y):
         self.body = [
@@ -108,6 +113,7 @@ class Snake:
             SnakePart(x - (2 * TILE_SIZE), y),
         ]
         self.next_direction = Direction.Nothing
+        self.is_game_over = False
 
     def head(self) -> SnakePart:
         return self.body[0]
@@ -116,6 +122,7 @@ class Snake:
         for part in self.body:
             part.update()
 
+        # Je ve středu políčka
         if (
             self.head().position.x % TILE_SIZE == 0
             and self.head().position.y % TILE_SIZE == 0
@@ -130,10 +137,10 @@ class Snake:
                         self.next_direction,
                     )
                 )
-
                 part.update_direction()
             self.next_direction = Direction.Nothing
 
+        # kolize s jablkem
         if self.head().eat_apple(apples):
             pos = (
                 self.body[-1]
@@ -144,6 +151,11 @@ class Snake:
             part.direction = self.body[-1].direction
             part.next_turns = self.body[-1].next_turns.copy()
             self.body.append(part)
+
+        # kolize s jinou částí hada
+        for i in range(2, len(self.body)):  # 2 protože 0 = hlava, 1 = kus za hlavou
+            if self.head().rect().colliderect(self.body[i].rect()):
+                self.is_game_over = True
 
     def draw(self):
         for part in self.body:
@@ -216,13 +228,18 @@ while True:
             ):
                 player.next_direction = Direction.Right
 
-    player.update()
+    if not player.is_game_over:
+        player.update()
 
     win.fill((10, 10, 10))
     draw_grid()
     player.draw()
     for apple in apples:
         apple.draw()
+
+    if player.is_game_over:
+        # game over
+        pass
 
     pygame.display.flip()
 
