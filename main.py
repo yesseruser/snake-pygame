@@ -31,44 +31,55 @@ class Direction(Enum):
                 return pygame.Vector2(vector.x, vector.y)
 
 
+class SnakePart:
+    position: pygame.Vector2
+    direction: Direction
+
+    def __init__(self, x, y):
+        self.position = pygame.Vector2(x, y)
+        self.direction = Direction.Nothing
+
+    def draw(self):
+        pygame.draw.rect(
+            win, (0, 200, 0), (self.position.x, self.position.y, TILE_SIZE, TILE_SIZE)
+        )
+
+    def update(self):
+        if self.direction != Direction.Nothing:
+            self.position = self.direction.apply(self.position, SPEED)
+
+
 class Player:
-    body: list[pygame.Vector2]
-    current_direction: Direction
+    body: list[SnakePart]
     next_direction: Direction
 
     def __init__(self, x, y):
         self.body = [
-            pygame.Vector2(x, y),
-            pygame.Vector2(x - TILE_SIZE, y),
-            pygame.Vector2(x - (2 * TILE_SIZE), y),
+            SnakePart(x, y),
+            SnakePart(x - TILE_SIZE, y),
+            SnakePart(x - (2 * TILE_SIZE), y),
         ]
-        self.current_direction = Direction.Nothing
         self.next_direction = Direction.Nothing
 
-    def head(self) -> pygame.Vector2:
+    def head(self) -> SnakePart:
         return self.body[0]
 
     def update(self):
-        if self.current_direction != Direction.Nothing:
-            previous_pos = self.head()
-            self.body[0] = self.current_direction.apply(self.head(), SPEED)
-            for i in range(1, len(self.body)):
-                # Needs rewrite - last pos is not the pos the next part is supposed to be at
-                new_previous_pos = self.body[i]
-                self.body[i] = previous_pos
-                previous_pos = new_previous_pos
+        for part in self.body:
+            part.update()
 
         if (
-            self.head().x % TILE_SIZE == 0
-            and self.head().y % TILE_SIZE == 0
+            self.head().position.x % TILE_SIZE == 0
+            and self.head().position.y % TILE_SIZE == 0
             and self.next_direction != Direction.Nothing
         ):
-            self.current_direction = self.next_direction
+            for i, part in enumerate(self.body):
+                part.direction = self.next_direction
             self.next_direction = Direction.Nothing
 
     def draw(self):
         for part in self.body:
-            pygame.draw.rect(win, (0, 200, 0), (part.x, part.y, TILE_SIZE, TILE_SIZE))
+            part.draw()
 
 
 def draw_grid():
@@ -97,18 +108,18 @@ while True:
         if event.type == pygame.QUIT:
             exit()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and player.current_direction != Direction.Down:
+            if event.key == pygame.K_UP and player.head().direction != Direction.Down:
                 player.next_direction = Direction.Up
-            if event.key == pygame.K_DOWN and player.current_direction != Direction.Up:
+            if event.key == pygame.K_DOWN and player.head().direction != Direction.Up:
                 player.next_direction = Direction.Down
-            if (
+            if (  # tohle mě odsazuje LSP
                 event.key == pygame.K_LEFT
-                and player.current_direction != Direction.Right
+                and player.head().direction != Direction.Right
             ):
                 player.next_direction = Direction.Left
             if (
                 event.key == pygame.K_RIGHT
-                and player.current_direction != Direction.Left
+                and player.head().direction != Direction.Left
             ):
                 player.next_direction = Direction.Right
 
