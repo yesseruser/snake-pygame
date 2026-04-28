@@ -3,6 +3,7 @@
 # 3. jablka
 # 4. hráč (pohyb se zahnutím - normálně)
 
+from collections import deque
 import random
 from enum import Enum
 import pygame
@@ -46,13 +47,26 @@ class Direction(Enum):
                 return Direction.Nothing
 
 
+class TurnMarker:
+    position: pygame.Vector2
+    direction: Direction
+
+    def __init__(self, x, y, direction):
+        self.position = pygame.Vector2(x, y)
+        self.direction = direction
+
+
 class SnakePart:
     position: pygame.Vector2
     direction: Direction
+    next_turns: deque[TurnMarker]
 
     def __init__(self, x, y):
         self.position = pygame.Vector2(x, y)
         self.direction = Direction.Nothing
+        self.next_turn_pos = pygame.Vector2(0, 0)
+        self.next_direction = Direction.Nothing
+        self.next_turns = deque()
 
     def rect(self) -> pygame.Rect:
         return pygame.Rect(self.position, (TILE_SIZE, TILE_SIZE))
@@ -65,6 +79,11 @@ class SnakePart:
     def update(self):
         if self.direction != Direction.Nothing:
             self.position = self.direction.apply(self.position, SPEED)
+        if len(self.next_turns) > 0 and (
+            self.direction == Direction.Nothing
+            or self.next_turns[0].position == self.position
+        ):
+            self.direction = self.next_turns.popleft().direction
 
     def eat_apple(self, apples: list[Apple]) -> bool:
         for i, apple in enumerate(apples):
@@ -74,9 +93,10 @@ class SnakePart:
         return False
 
 
-class Player:
+class Snake:
     body: list[SnakePart]
     next_direction: Direction
+    turns = dict[pygame.Vector2, Direction]
 
     def __init__(self, x, y):
         self.body = [
@@ -97,9 +117,17 @@ class Player:
             self.head().position.x % TILE_SIZE == 0
             and self.head().position.y % TILE_SIZE == 0
             and self.next_direction != Direction.Nothing
-        ):  # kombinace for part in self.body a for i in range(len(self.body))
-            for i, part in enumerate(self.body):
-                part.direction = self.next_direction
+        ):
+            for part in self.body:
+                # part.direction = self.next_direction
+                part.next_turns.append(
+                    TurnMarker(
+                        self.head().position.x,
+                        self.head().position.y,
+                        self.next_direction,
+                    )
+                )
+            self.head().direction = self.head().next_turns.popleft().direction
             self.next_direction = Direction.Nothing
 
         if self.head().eat_apple(apples):
@@ -110,6 +138,7 @@ class Player:
             )
             part = SnakePart(pos.x, pos.y)
             part.direction = self.body[-1].direction
+            part.next_turns = self.body[-1].next_turns.copy()
             self.body.append(part)
 
     def draw(self):
@@ -160,7 +189,7 @@ pygame.init()
 win = pygame.display.set_mode((TILE_COUNT * TILE_SIZE, TILE_COUNT * TILE_SIZE))
 clock = pygame.time.Clock()
 
-player = Player((TILE_COUNT // 2) * TILE_SIZE, (TILE_COUNT // 2) * TILE_SIZE)
+player = Snake((TILE_COUNT // 2) * TILE_SIZE, (TILE_COUNT // 2) * TILE_SIZE)
 apples = [Apple()]
 
 while True:
