@@ -79,11 +79,11 @@ class SnakePart:
     def update(self):
         if self.direction != Direction.Nothing:
             self.position = self.direction.apply(self.position, SPEED)
-        if len(self.next_turns) > 0 and (
-            self.direction == Direction.Nothing
-            or self.next_turns[0].position == self.position
-        ):
-            self.direction = self.next_turns.popleft().direction
+        if len(self.next_turns) > 0:
+            if self.next_turns[0].position == self.position:
+                self.direction = self.next_turns.popleft().direction
+            if self.direction == Direction.Nothing:
+                self.direction = Direction.Right
 
     def eat_apple(self, apples: list[Apple]) -> bool:
         for i, apple in enumerate(apples):
