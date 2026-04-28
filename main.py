@@ -1,13 +1,15 @@
+# 1. mřížka
+# 2. hráč (pohyb bez zahnutí)
+# 3. jablka
+# 4. hráč (pohyb se zahnutím - normálně)
+
+import random
 from enum import Enum
 import pygame
 
 TILE_SIZE = 50
 TILE_COUNT = 12
 SPEED = 5
-
-pygame.init()
-win = pygame.display.set_mode((TILE_COUNT * TILE_SIZE, TILE_COUNT * TILE_SIZE))
-clock = pygame.time.Clock()
 
 
 class Direction(Enum):
@@ -30,6 +32,19 @@ class Direction(Enum):
             case _:
                 return pygame.Vector2(vector.x, vector.y)
 
+    def invert(self) -> Direction:
+        match self:
+            case Direction.Up:
+                return Direction.Down
+            case Direction.Down:
+                return Direction.Up
+            case Direction.Left:
+                return Direction.Right
+            case Direction.Right:
+                return Direction.Left
+            case _:
+                return Direction.Nothing
+
 
 class SnakePart:
     position: pygame.Vector2
@@ -39,6 +54,9 @@ class SnakePart:
         self.position = pygame.Vector2(x, y)
         self.direction = Direction.Nothing
 
+    def rect(self) -> pygame.Rect:
+        return pygame.Rect(self.position, (TILE_SIZE, TILE_SIZE))
+
     def draw(self):
         pygame.draw.rect(
             win, (0, 200, 0), (self.position.x, self.position.y, TILE_SIZE, TILE_SIZE)
@@ -47,6 +65,13 @@ class SnakePart:
     def update(self):
         if self.direction != Direction.Nothing:
             self.position = self.direction.apply(self.position, SPEED)
+
+    def eat_apple(self, apples: list[Apple]) -> bool:
+        for i, apple in enumerate(apples):
+            if self.rect().colliderect(apple.rect()):
+                apples[i] = Apple()
+                return True
+        return False
 
 
 class Player:
@@ -72,14 +97,44 @@ class Player:
             self.head().position.x % TILE_SIZE == 0
             and self.head().position.y % TILE_SIZE == 0
             and self.next_direction != Direction.Nothing
-        ):
+        ):  # kombinace for part in self.body a for i in range(len(self.body))
             for i, part in enumerate(self.body):
                 part.direction = self.next_direction
             self.next_direction = Direction.Nothing
 
+        if self.head().eat_apple(apples):
+            pos = (
+                self.body[-1]
+                .direction.invert()
+                .apply(self.body[-1].position, TILE_SIZE)
+            )
+            part = SnakePart(pos.x, pos.y)
+            part.direction = self.body[-1].direction
+            self.body.append(part)
+
     def draw(self):
         for part in self.body:
             part.draw()
+
+
+class Apple:
+    position: pygame.Vector2
+
+    def __init__(self):
+        x = random.randint(0, TILE_COUNT - 1) * TILE_SIZE
+        y = random.randint(0, TILE_COUNT - 1) * TILE_SIZE
+        self.position = pygame.Vector2(x, y)
+
+    def draw(self):
+        pygame.draw.circle(
+            win,
+            (255, 0, 0),
+            self.position + pygame.Vector2(TILE_SIZE / 2, TILE_SIZE / 2),
+            TILE_SIZE / 2,
+        )
+
+    def rect(self):
+        return pygame.Rect(self.position, (TILE_SIZE, TILE_SIZE))
 
 
 def draw_grid():
@@ -101,7 +156,12 @@ def draw_grid():
                     )
 
 
+pygame.init()
+win = pygame.display.set_mode((TILE_COUNT * TILE_SIZE, TILE_COUNT * TILE_SIZE))
+clock = pygame.time.Clock()
+
 player = Player((TILE_COUNT // 2) * TILE_SIZE, (TILE_COUNT // 2) * TILE_SIZE)
+apples = [Apple()]
 
 while True:
     for event in pygame.event.get():
@@ -128,6 +188,8 @@ while True:
     win.fill((10, 10, 10))
     draw_grid()
     player.draw()
+    for apple in apples:
+        apple.draw()
 
     pygame.display.flip()
 
