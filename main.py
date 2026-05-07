@@ -28,7 +28,7 @@ class Direction(Enum):
             case Direction.Up:
                 return pygame.Vector2(vector.x, vector.y - increment)
             case Direction.Down:
-                return pygame.Vector2(vector.x, vector.y + increment)
+                return pygame.Vector2(vector.x, vector.y + increment)  # zbytek sami
             case Direction.Left:
                 return pygame.Vector2(vector.x - increment, vector.y)
             case Direction.Right:
@@ -39,7 +39,7 @@ class Direction(Enum):
     def invert(self) -> Direction:
         match self:
             case Direction.Up:
-                return Direction.Down
+                return Direction.Down  # zbytek sami
             case Direction.Down:
                 return Direction.Up
             case Direction.Left:
@@ -176,7 +176,7 @@ class Snake:
 class Apple:
     position: pygame.Vector2
 
-    def __init__(self):
+    def __init__(self):  # ať zkusí sami vygenerovat náhodnou pozici
         x = random.randint(0, TILE_COUNT - 1) * TILE_SIZE
         y = random.randint(0, TILE_COUNT - 1) * TILE_SIZE
         self.position = pygame.Vector2(x, y)
