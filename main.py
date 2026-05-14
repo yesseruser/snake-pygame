@@ -80,9 +80,9 @@ class SnakePart:
         )
 
     def update(self):
+        self.update_direction()
         if self.direction != Direction.Nothing:
             self.position = self.direction.apply(self.position, SPEED)
-        self.update_direction()
 
     def update_direction(self):
         if len(self.next_turns) > 0:
@@ -139,7 +139,6 @@ class Snake:
                         self.next_direction,
                     )
                 )
-                part.update_direction()
             self.next_direction = Direction.Nothing
 
         # kolize s jablkem
